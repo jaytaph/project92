@@ -51,13 +51,13 @@ var terrainColors = []tcell.Color{
 type TerrainItem struct {
 	s tcell.Style // Style (color) of the element
 	c rune        // actual character
-	//  here will be other stuff about the actual character
+	//  here will be other stuff about the actual element. Like a player, enemy, building, flag etc
 }
 
 type GameMap struct {
 	m [][]TerrainItem // Map of the terrain
 	h int             // Height of the map
-	w int             // Widht of the map
+	w int             // Width of the map
 }
 
 // New will create a new map based on width and height. It will be empty
@@ -67,6 +67,7 @@ func New(w, h int) *GameMap {
 		w: w,
 	}
 
+	// Initialize multidimensional array
 	gameMap.m = make([][]TerrainItem, h)
 	for i := 0; i != h; i++ {
 		gameMap.m[i] = make([]TerrainItem, w)
@@ -81,22 +82,23 @@ func (gm *GameMap) Regenerate(a float64, b float64, n int32, seed int64) {
 
 	for x := 0; x != gm.w; x++ {
 		for y := 0; y != gm.h; y++ {
-			c := '.'
-			if y == 0 || x == 0 || y == gm.h-1 || x == gm.w-1 {
-				c = 'X'
-			}
 
-			c = '.'
-
+			// Get perlin noise for x/y coordinate
 			f := int(p.Noise2D(float64(x), float64(y)))
+
+			// Cap between 0 and len(terrain colors)
 			if f < 0 {
 				f = 0
 			}
 			if f >= len(terrainColors)-1 {
 				f = len(terrainColors) - 1
 			}
+
+			// Display empty char
+			c := ' '
+
+			// Set color
 			st := tcell.StyleDefault.Background(terrainColors[f] | tcell.ColorValid).Foreground(tcell.ColorGreen)
-			// st := tcell.StyleDefault.Background(tcell.Color(p.Noise2D(float64(x), float64(y)) + 96) | tcell.ColorValid).Foreground(tcell.ColorWhite)
 
 			gm.m[x][y] = TerrainItem{
 				s: st,
