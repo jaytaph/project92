@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/jaytaph/project92/game"
 	"github.com/jaytaph/project92/terrain"
 )
 
@@ -17,7 +18,6 @@ const (
 
 func main() {
 	defStyle := tcell.StyleDefault.Background(tcell.ColorReset).Foreground(tcell.ColorReset)
-	// boxStyle := tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorPurple)
 
 	// Initialize screen
 	s, err := tcell.NewScreen()
@@ -29,7 +29,6 @@ func main() {
 	}
 	s.SetStyle(defStyle)
 	s.Clear()
-
 
 	// Create new terrain map
 	rand.Seed(time.Now().UnixNano())
@@ -47,10 +46,15 @@ func main() {
 	}
 
 	// Display map
-	refresh(gm, s, xOff, yOff)
 
 	for {
 		// Poll event
+		if !s.HasPendingEvent() {
+			refresh(gm, s, xOff, yOff)
+			time.Sleep(28 * time.Millisecond)
+			continue
+		}
+
 		ev := s.PollEvent()
 
 		// Process event
@@ -62,9 +66,12 @@ func main() {
 			if ev.Key() == tcell.KeyRune {
 				switch ev.Rune() {
 				case 'r':
-					// 'r' regenerates a new gamemap
+					// 'r' regenerates a new game map
 					gm.Regenerate(.1, .1, 3, rand.Int63())
-					refresh(gm, s, xOff, yOff)
+					// refresh(gm, s, xOff, yOff)
+				case 'p':
+					game.Ping(gm, 100, 20, 15)
+					// refresh(gm, s, xOff, yOff)
 				}
 			}
 			if ev.Key() == tcell.KeyUp {
@@ -72,30 +79,29 @@ func main() {
 				if yOff < 0 {
 					yOff = 0
 				}
-				refresh(gm, s, xOff, yOff)
+				// refresh(gm, s, xOff, yOff)
 			}
 			if ev.Key() == tcell.KeyDown {
 				yOff++
 				if yOff > maxY {
 					yOff = maxY
 				}
-				refresh(gm, s, xOff, yOff)
+				// refresh(gm, s, xOff, yOff)
 			}
 			if ev.Key() == tcell.KeyLeft {
 				xOff--
 				if xOff < 0 {
 					xOff = 0
 				}
-				refresh(gm, s, xOff, yOff)
+				// refresh(gm, s, xOff, yOff)
 			}
 			if ev.Key() == tcell.KeyRight {
 				xOff++
 				if xOff > maxX {
 					xOff = maxX
 				}
-				refresh(gm, s, xOff, yOff)
+				// refresh(gm, s, xOff, yOff)
 			}
-
 
 			if ev.Key() == tcell.KeyEscape || ev.Key() == tcell.KeyCtrlC {
 				quit()
