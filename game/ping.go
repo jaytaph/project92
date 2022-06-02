@@ -5,17 +5,16 @@ import (
 	"time"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/jaytaph/project92/terrain"
 )
 
 // Ping will trigger a ping sourced from x/y with a strength s
-func Ping(gm *terrain.GameMap, x, y, s int) {
+func Ping(gm *GameMap, x, y, s int) {
 
 	// Ping inside a separate go routine
-	go func(gm *terrain.GameMap, sourceX, sourceY, s int) {
+	go func(gm *GameMap, sourceX, sourceY, s int) {
 
 		// Items will store the element below a ping asterisk. We should figure out a better way to deal with this
-		items := make([]*terrain.TerrainItem, 0, 360)
+		items := make([]*TerrainItem, 0, 360)
 
 		// Strength is basically the max radius of the ping
 		for i := 0; i != s; i++ {

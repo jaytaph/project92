@@ -8,7 +8,6 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/jaytaph/project92/game"
-	"github.com/jaytaph/project92/terrain"
 )
 
 const (
@@ -32,7 +31,7 @@ func main() {
 
 	// Create new terrain map
 	rand.Seed(time.Now().UnixNano())
-	gm := terrain.New(maxX, maxY)
+	gm := game.New(maxX, maxY)
 	gm.Regenerate(.1, .1, 3, rand.Int63())
 
 	// Start displaying map at top left corner
@@ -110,7 +109,7 @@ func main() {
 	}
 }
 
-func refresh(gm *terrain.GameMap, s tcell.Screen, xOff, yOff int) {
+func refresh(gm *game.GameMap, s tcell.Screen, xOff, yOff int) {
 	// s.Clear()
 	gm.Draw(s, xOff, yOff)
 	s.Show()
