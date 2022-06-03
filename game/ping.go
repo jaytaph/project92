@@ -32,7 +32,7 @@ func Ping(gm *GameMap, x, y, s int) {
 
 				// Get tile on position, store it when it's not a '*' ping
 				it, _ := gm.GetTile(x, y)
-				if it.C != '*' {
+				if it != nil && it.C != '*' {
 					items = append(items, it)
 				}
 

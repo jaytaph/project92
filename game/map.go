@@ -2,7 +2,6 @@ package game
 
 import (
 	"errors"
-	"fmt"
 	"math/rand"
 	"sync"
 
@@ -58,19 +57,29 @@ type TerrainItem struct {
 	//  here will be other stuff about the actual element. Like a player, enemy, building, flag etc
 }
 
+type Player struct {
+	X int
+	Y int
+}
+
 type GameMap struct {
 	mu sync.Mutex      // Mutex so we can make sure only one thing can edit the map
 	m  [][]TerrainItem // Map of the terrain
-	h  int             // Height of the map
-	w  int             // Width of the map
+	H  int             // Height of the map
+	W  int             // Width of the map
+
+	MapXOff int
+	MapYOff int
+
+	P Player
 }
 
 // New will create a new map based on width and height. It will be empty
 func New(w, h int) *GameMap {
 	gameMap := GameMap{
 		mu: sync.Mutex{},
-		h:  h,
-		w:  w,
+		H:  h,
+		W:  w,
 	}
 
 	// Initialize multidimensional array
@@ -86,8 +95,8 @@ func New(w, h int) *GameMap {
 func (gm *GameMap) Regenerate(a float64, b float64, n int32, seed int64) {
 	p := perlin.NewPerlinRandSource(a, b, n, rand.NewSource(seed))
 
-	for x := 0; x != gm.w; x++ {
-		for y := 0; y != gm.h; y++ {
+	for x := 0; x != gm.W; x++ {
+		for y := 0; y != gm.H; y++ {
 
 			// Get perlin noise for x/y coordinate
 			f := int(p.Noise2D(float64(x), float64(y)))
@@ -117,41 +126,40 @@ func (gm *GameMap) Regenerate(a float64, b float64, n int32, seed int64) {
 }
 
 // Draw will draw the gamemap onto the given screen. xOff and yOff are the top left corner of the map to display
-func (gm *GameMap) Draw(s tcell.Screen, xOff int, yOff int) {
+func (gm *GameMap) Draw(s tcell.Screen) {
 	w, h := s.Size()
 
-	// Leave a bit of room for game info
-	h -= 10
+	// This is the viewport which we draw
+	viewportHeight := h - 10
+	viewportWidth := w - 2
+	viewportX := 1
+	viewportY := 1
 
-	// Make sure we don't display outside of the map
-	if w+xOff > gm.w {
-		w = gm.w - xOff
-	}
-	if h+yOff > gm.h {
-		h = gm.h - yOff
-	}
+	emptyStyle := tcell.StyleDefault.Background(tcell.ColorReset).Foreground(tcell.ColorReset)
 
-	// Draw coordinates
-	white := tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorWhite)
-	for y := 0; y != h; y++ {
-		f := fmt.Sprintf("%02X", y+yOff)
-		s.SetContent(0, y+2, rune(f[0]), nil, white)
-		s.SetContent(1, y+2, rune(f[1]), nil, white)
-		s.SetContent(2, y+2, ' ', nil, white)
+	for y := 0; y != viewportHeight; y++ {
+		for x := 0; x != viewportWidth; x++ {
+			// find screenX and screenY
+			// find mapX and mapY
 
-		for x := 0; x != w; x++ {
-			f := fmt.Sprintf("%02X", x+xOff)
-			s.SetContent(x+3, 0, rune(f[0]), nil, white)
-			s.SetContent(x+3, 1, rune(f[1]), nil, white)
+			screenX := viewportX + x
+			screenY := viewportY + y
+			mapX := gm.MapXOff + x
+			mapY := gm.MapYOff + y
 
-			s.SetContent(x+3, y+2, gm.m[x+xOff][y+yOff].C, nil, gm.m[x+xOff][y+yOff].S)
-		}
-	}
+			var c rune
+			var st tcell.Style
+			if mapX >= gm.W || mapY >= gm.H {
+				// outside boundaries
+				c = ' '
+				st = emptyStyle
+			} else {
+				c = gm.m[mapX][mapY].C
+				st = gm.m[mapX][mapY].S
+			}
 
-	// draw actual map
-	for y := 0; y != h; y++ {
-		for x := 0; x != w; x++ {
-			s.SetContent(x+3, y+2, gm.m[x+xOff][y+yOff].C, nil, gm.m[x+xOff][y+yOff].S)
+			s.SetContent(screenX, screenY, c, nil, st)
+
 		}
 	}
 }
@@ -161,7 +169,7 @@ func (gm *GameMap) GetTile(x, y int) (*TerrainItem, error) {
 	if x < 0 || y < 0 {
 		return nil, errors.New("out of bounds")
 	}
-	if x >= gm.w || y >= gm.h {
+	if x >= gm.W || y >= gm.H {
 		return nil, errors.New("out of bounds")
 	}
 
@@ -178,14 +186,14 @@ func (gm *GameMap) SetTile(x, y int, s tcell.Style, c rune) {
 	if x < 0 || y < 0 {
 		return
 	}
-	if x >= gm.w || y >= gm.h {
+	if x >= gm.W || y >= gm.H {
 		return
 	}
 
-	gm.mu.Lock()
+	gm.mu.Lock() // Needed?
 	gm.m[x][y].C = c
 	gm.m[x][y].S = s
 	gm.m[x][y].X = x
 	gm.m[x][y].Y = y
-	gm.mu.Unlock()
+	gm.mu.Unlock() // Needed?
 }
