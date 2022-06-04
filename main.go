@@ -45,66 +45,32 @@ func drawStr(s tcell.Screen, x, y int, style tcell.Style, str string) {
 var mainScreen *screen.Screen
 
 func main() {
-	defStyle := tcell.StyleDefault.Background(tcell.ColorReset).Foreground(tcell.ColorReset)
-
-	// Initialize screen
-	s, err := tcell.NewScreen()
-	if err != nil {
-		log.Fatalf("%+v", err)
-	}
-	if err := s.Init(); err != nil {
-		log.Fatalf("%+v", err)
-	}
-	s.SetStyle(defStyle)
-	s.Clear()
-
-	// Create new terrain map
-	rand.Seed(time.Now().UnixNano())
-	gm := game.New(maxX, maxY)
-	gm.Regenerate(.1, .1, 3, rand.Int63())
-
-	w, h := s.Size()
-	vp, err := screen.New(0, 0, w, h, nil)
-	if err != nil {
-		log.Fatal("%+v", err)
-	}
-	vp.SetBordered(true)
-	vp.SetActive(true)
-
-	mapVp, _ := screen.New(5, 5, w-10, h-10, vp)
-	mapVp.SetBordered(true)
-	mapVp.SetActive(true)
-	mapVp.SetTitle("Map")
-
-	mainScreen = &screen.Screen{
-		Scr:    s,
-		MainVP: vp,
-		MapVp:  mapVp,
-	}
-
-	// Start displaying map at top left corner
+	scr := initPhysicalScreen()
+	initGameScreens(scr)
+	gm := initGame(maxX, maxY)
 
 	// Event loop
 	quit := func() {
-		s.Fini()
+		scr.Fini()
 		os.Exit(0)
 	}
 
 	for {
-		// Poll event
-		if !s.HasPendingEvent() {
-			refresh(gm, s)
+		// Refresh the screen every 28ms
+		if !scr.HasPendingEvent() {
+			refresh(gm, scr)
 			time.Sleep(28 * time.Millisecond)
 			continue
 		}
 
-		ev := s.PollEvent()
+		// Poll event
+		ev := scr.PollEvent()
 
 		// Process event
 		switch ev := ev.(type) {
 		case *tcell.EventResize:
 			// In case the terminal resized
-			refresh(gm, s)
+			refresh(gm, scr)
 		case *tcell.EventKey:
 			if ev.Key() == tcell.KeyRune {
 				switch ev.Rune() {
@@ -140,6 +106,59 @@ func main() {
 	}
 }
 
+func initGame(maxX, maxY int) *game.GameMap {
+	// Create new terrain map
+	rand.Seed(time.Now().UnixNano())
+	gm := game.New(maxX, maxY)
+	gm.Regenerate(.1, .1, 3, rand.Int63())
+
+	return gm
+}
+
+func initPhysicalScreen() tcell.Screen {
+	defStyle := tcell.StyleDefault.Background(tcell.ColorReset).Foreground(tcell.ColorReset)
+
+	s, err := tcell.NewScreen()
+	if err != nil {
+		log.Fatalf("%+v", err)
+	}
+	if err := s.Init(); err != nil {
+		log.Fatalf("%+v", err)
+	}
+	s.SetStyle(defStyle)
+	s.Clear()
+
+	return s
+}
+
+func initGameScreens(scr tcell.Screen) {
+	// Generate
+	w, h := scr.Size()
+	vp, err := screen.New(0, 0, w, h, nil)
+	if err != nil {
+		log.Fatal("%+v", err)
+	}
+	vp.SetBordered(true)
+	vp.SetActive(false)
+	vp.SetTitle("Project92")
+
+	mapVp, _ := screen.New(1, 1, vp.W-2, vp.H-10, vp)
+	mapVp.SetBordered(true)
+	mapVp.SetActive(true)
+	mapVp.SetTitle("Map")
+
+	menuVp, _ := screen.New(1, vp.H-9, vp.W-2, 9, vp)
+	menuVp.SetBordered(true)
+	menuVp.SetTitle("Menu")
+
+	mainScreen = &screen.Screen{
+		Scr:    scr,
+		MainVP: vp,
+		MapVp:  mapVp,
+	}
+
+}
+
 func move(gm *game.GameMap, mode MoveMode, x, y int) {
 	switch mode {
 	case MoveModePlayer:
@@ -166,7 +185,6 @@ func ModLimit(v int, delta int, min int, max int) int {
 }
 
 func refresh(gm *game.GameMap, s tcell.Screen) {
-	// s.Clear()
 	gm.Draw(s)
 
 	// Draw player

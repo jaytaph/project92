@@ -31,8 +31,7 @@ var (
 )
 
 var (
-	singleBorderRunes = [8]rune{tcell.RuneULCorner, tcell.RuneHLine, tcell.RuneURCorner, tcell.RuneVLine, tcell.RuneLRCorner, tcell.RuneHLine, tcell.RuneLLCorner, tcell.RuneVLine}
-	doubleBorderRunes = [8]rune{tcell.RuneULCorner, tcell.RuneHLine, tcell.RuneURCorner, tcell.RuneVLine, tcell.RuneLRCorner, tcell.RuneHLine, tcell.RuneLLCorner, tcell.RuneVLine}
+	borderRunes = [8]rune{tcell.RuneULCorner, tcell.RuneHLine, tcell.RuneURCorner, tcell.RuneVLine, tcell.RuneLRCorner, tcell.RuneHLine, tcell.RuneLLCorner, tcell.RuneVLine}
 )
 
 type DrawContentFunc func(vp *Viewport, s *Screen)
@@ -91,7 +90,6 @@ func (vp *Viewport) Draw(s *Screen) {
 	if vp.bordered {
 		st := tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorWhite)
 
-		borders := singleBorderRunes
 		if vp.active {
 			st = tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorRed)
 		}
@@ -101,29 +99,29 @@ func (vp *Viewport) Draw(s *Screen) {
 		for x := 0; x != vp.W; x++ {
 			// top
 			sx, sy, _ = vp.GetScreenCoordinates(x, 0)
-			s.Scr.SetCell(sx, sy, st, borders[1])
+			s.Scr.SetCell(sx, sy, st, borderRunes[1])
 			// bottom
 			sx, sy, _ = vp.GetScreenCoordinates(x, vp.H-1)
-			s.Scr.SetCell(sx, sy, st, borders[5])
+			s.Scr.SetCell(sx, sy, st, borderRunes[5])
 		}
 		for y := 0; y != vp.H; y++ {
 			// left
 			sx, sy, _ = vp.GetScreenCoordinates(0, y)
-			s.Scr.SetCell(sx, sy, st, borders[3])
+			s.Scr.SetCell(sx, sy, st, borderRunes[3])
 			// right
 			sx, sy, _ = vp.GetScreenCoordinates(vp.W-1, y)
-			s.Scr.SetCell(sx, sy, st, borders[7])
+			s.Scr.SetCell(sx, sy, st, borderRunes[7])
 
 		}
 
 		sx, sy, _ = vp.GetScreenCoordinates(0, 0)
-		s.Scr.SetCell(sx, sy, st, borders[0])
+		s.Scr.SetCell(sx, sy, st, borderRunes[0])
 		sx, sy, _ = vp.GetScreenCoordinates(vp.W-1, 0)
-		s.Scr.SetCell(sx, sy, st, borders[2])
+		s.Scr.SetCell(sx, sy, st, borderRunes[2])
 		sx, sy, _ = vp.GetScreenCoordinates(vp.W-1, vp.H-1)
-		s.Scr.SetCell(sx, sy, st, borders[4])
+		s.Scr.SetCell(sx, sy, st, borderRunes[4])
 		sx, sy, _ = vp.GetScreenCoordinates(0, vp.H-1)
-		s.Scr.SetCell(sx, sy, st, borders[6])
+		s.Scr.SetCell(sx, sy, st, borderRunes[6])
 
 		if vp.title != "" {
 			tmp := fmt.Sprintf("[ %s ]", vp.title)
